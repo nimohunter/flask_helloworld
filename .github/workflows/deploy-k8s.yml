@@ -29,6 +29,6 @@ jobs:
 
     - name: Deploy to Kubernetes
       run: |
-        helm upgrade --install ml-api . -f values-${{ env.BRANCH_NAME }}.yaml --namespace ${{ env.BRANCH_NAME }}
+        helm upgrade --install ml-api ./helm-flask-helloworld -f ./helm-flask-helloworld/values-${{ env.BRANCH_NAME }}.yaml --namespace ${{ env.BRANCH_NAME }}
       env:
         KUBECONFIG: ${{ github.workspace }}/kubeconfig
