@@ -1,0 +1,34 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      # - release/dev
+      # - release/staging
+      # - release/prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Kubernetes context
+      uses: azure/setup-k8s@v1
+      with:
+        kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
+
+    - name: Install Helm
+      run: |
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+    - name: Extract branch name
+      shell: bash
+      run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | cut -d'/' -f2)" >> $GITHUB_ENV
+
+    - name: Deploy to Kubernetes
+      run: |
+        helm upgrade --install ml-api . -f values-${{ env.BRANCH_NAME }}.yaml --namespace ${{ env.BRANCH_NAME }}
+      env:
+        KUBECONFIG: ${{ github.workspace }}/kubeconfig
