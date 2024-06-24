@@ -23,9 +23,20 @@ jobs:
       run: |
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
+    - name: Add Helm chart repository
+      run: |
+        helm repo add my-helm-charts https://example.com/my-helm-charts
+        helm repo update
+
     - name: Extract branch name
       shell: bash
       run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | cut -d'/' -f2)" >> $GITHUB_ENV
+
+    - name: Create namespace if not exists
+      run: |
+        kubectl create namespace ${{ env.BRANCH_NAME }} --dry-run=client -o yaml | kubectl apply -f -
+      env:
+        KUBECONFIG: ${{ github.workspace }}/kubeconfig
 
     - name: Deploy to Kubernetes
       run: |

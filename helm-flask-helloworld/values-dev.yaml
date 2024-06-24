@@ -1,8 +1,0 @@
-# values for dev 
-# write here value will override the default values.yaml
-
-image:
-  tag: "dev"
-
-enableProbes: false
-testResponse: "Hello, World From Dev Env"

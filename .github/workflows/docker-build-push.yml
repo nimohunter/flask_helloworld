@@ -3,9 +3,9 @@ name: Build and Push Docker Image
 on:
   push:
     branches:
-      - release/dev
-      - release/staging
-      - release/prod
+      # - release/dev
+      # - release/staging
+      # - release/prod
 
 jobs:
   build-and-push:

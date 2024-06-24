@@ -1,4 +1,4 @@
-#
+# Example ci/cd demo
 
 # Hypothesis
 we assume dockerhub image [`duluku/flask-hello-world`](https://hub.docker.com/repository/docker/duluku/flask-hello-world/general) as our ml docker images, and tag with `dev`, `staging`, `prod`. 
