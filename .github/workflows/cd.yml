@@ -1,0 +1,58 @@
+name: Continuous Deployment
+
+on:
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types:
+      - completed
+  push:
+    branches: 
+      # - release/dev
+      # - release/staging
+      # - release/prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    # Set up AWS credentials
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    # Update kubeconfig for EKS
+    - name: Set up Kubernetes context
+      run: |
+        aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+    - name: Install Helm
+      run: |
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+    # have to replace the heml repo location, maybe is ChartMuseum
+    - name: Add Helm chart repository
+      run: |
+        helm repo add generic-ml-deploy-helm https://example.com/helm-charts/helm_generic_package
+        helm repo update
+
+    - name: Extract branch name
+      shell: bash
+      run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | cut -d'/' -f2)" >> $GITHUB_ENV
+
+    - name: Create namespace if not exists
+      run: |
+        kubectl get ns ${{ env.BRANCH_NAME }} || kubectl create namespace ${{ env.BRANCH_NAME }}
+
+    - name: Deploy to Kubernetes
+      run: |
+        helm upgrade --install my-ml-release generic-ml-deploy-helm \
+          --namespace ${{ env.BRANCH_NAME }} \
+          -f generic-ml-deploy-helm/values-${{ env.BRANCH_NAME }}.yaml \
+          --set image.repository=duluku/flask-hello-world \
+          --set image.tag=${{ env.BRANCH_NAME }}
