@@ -1,8 +1,12 @@
 name: Continuous Deployment
 
 on:
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types:
+      - completed
   push:
-    branches:
+    branches: 
       # - release/dev
       # - release/staging
       # - release/prod
@@ -14,6 +18,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    # default use azure, Azure Kubernetes Service (AKS)
     - name: Set up Kubernetes context
       uses: azure/setup-k8s@v1
       with:
@@ -23,9 +28,10 @@ jobs:
       run: |
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
+    # have to replace the heml repo location, maybe is ChartMuseum
     - name: Add Helm chart repository
       run: |
-        helm repo add my-helm-charts https://example.com/my-helm-charts
+        helm repo add generic-ml-deploy-helm https://example.com/helm-charts/helm_generic_package
         helm repo update
 
     - name: Extract branch name
@@ -34,12 +40,13 @@ jobs:
 
     - name: Create namespace if not exists
       run: |
-        kubectl create namespace ${{ env.BRANCH_NAME }} --dry-run=client -o yaml | kubectl apply -f -
+        kubectl create namespace ${{ env.BRANCH_NAME }} --ignore-exists
       env:
         KUBECONFIG: ${{ github.workspace }}/kubeconfig
 
+    # remember change the docker image name
     - name: Deploy to Kubernetes
       run: |
-        helm upgrade --install ml-api ./helm-flask-helloworld -f ./helm-flask-helloworld/values-${{ env.BRANCH_NAME }}.yaml --namespace ${{ env.BRANCH_NAME }}
+        helm upgrade --install my-ml-release generic-ml-deploy-helm -f generic-ml-deploy-helm/values-${{ env.BRANCH_NAME }}.yaml --namespace ${{ env.BRANCH_NAME }} --set image.repository=duluku/flask-hello-world
       env:
         KUBECONFIG: ${{ github.workspace }}/kubeconfig
