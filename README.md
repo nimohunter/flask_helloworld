@@ -101,3 +101,12 @@ autoscaling:
   targetCPUUtilizationPercentage: 50
 ```
 
+# Terraform
+Sometimes have to say, while CI/CD automates the software deployment lifecycle, Terraform automates and manages the infrastructure lifecycle. So i wish to use Terraform to provide the kubernetes cluster, load balance or other cloud service, so in this moment, i prefer use Terraform just to provide the EKS in AWS. 
+
+1. Provision EKS Cluster: The `eks-cluster.tf` file sets up the EKS cluster along with the necessary IAM roles and policies.
+2. Configure Access: The providers.tf file dynamically configures the Kubernetes and Helm providers using credentials obtained from the provisioned EKS cluster.
+3. Ready for Deployment: With the cluster set up and providers configured, our CD pipeline can now use Helm to deploy applications to the Kubernetes cluster.
+
+ps. sometimes we can use some Action in github market like [github-actions-deploy-eks-helm](https://github.com/bitovi/github-actions-deploy-eks-helm)
+

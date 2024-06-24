@@ -18,11 +18,18 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    # default use azure, Azure Kubernetes Service (AKS)
-    - name: Set up Kubernetes context
-      uses: azure/setup-k8s@v1
+    # Set up AWS credentials
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
       with:
-        kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    # Update kubeconfig for EKS
+    - name: Set up Kubernetes context
+      run: |
+        aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
 
     - name: Install Helm
       run: |
@@ -40,13 +47,12 @@ jobs:
 
     - name: Create namespace if not exists
       run: |
-        kubectl create namespace ${{ env.BRANCH_NAME }} --ignore-exists
-      env:
-        KUBECONFIG: ${{ github.workspace }}/kubeconfig
+        kubectl get ns ${{ env.BRANCH_NAME }} || kubectl create namespace ${{ env.BRANCH_NAME }}
 
-    # remember change the docker image name
     - name: Deploy to Kubernetes
       run: |
-        helm upgrade --install my-ml-release generic-ml-deploy-helm -f generic-ml-deploy-helm/values-${{ env.BRANCH_NAME }}.yaml --namespace ${{ env.BRANCH_NAME }} --set image.repository=duluku/flask-hello-world
-      env:
-        KUBECONFIG: ${{ github.workspace }}/kubeconfig
+        helm upgrade --install my-ml-release generic-ml-deploy-helm \
+          --namespace ${{ env.BRANCH_NAME }} \
+          -f generic-ml-deploy-helm/values-${{ env.BRANCH_NAME }}.yaml \
+          --set image.repository=duluku/flask-hello-world \
+          --set image.tag=${{ env.BRANCH_NAME }}
